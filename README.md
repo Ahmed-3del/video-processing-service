@@ -63,7 +63,7 @@ choco install ffmpeg
 ### 1. Clone the Repository
 
 ```bash
-git clone <your-repository-url>
+git clone <https://github.com/Ahmed-3del/video-processing-service>
 cd video-processing-service
 ```
 
