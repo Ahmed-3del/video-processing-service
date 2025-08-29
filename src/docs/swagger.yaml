@@ -1,0 +1,667 @@
+openapi: 3.0.0
+info:
+  title: Video Processing Service API
+  version: 1.0.0
+  description: |
+    A comprehensive video processing service API that provides:
+    - User authentication and management
+    - Video upload, processing, and management
+    - Cloud storage integration with Cloudinary
+    - JWT-based authentication
+    - File upload capabilities
+    
+    ## Features
+    - User registration and login
+    - JWT token authentication
+    - Video upload with processing
+    - User profile management
+    - Video listing and retrieval
+    - Cloud storage integration
+    
+    ## Base URL
+    - Development: http://localhost:8080
+    - Production: [Your production URL]
+    
+    ## Authentication
+    Most endpoints require JWT authentication. Include the token in the Authorization header:
+    ```
+    Authorization: Bearer <your-jwt-token>
+    ```
+
+servers:
+  - url: http://localhost:8080
+    description: Development server
+  - url: https://your-production-domain.com
+    description: Production server
+
+paths:
+  /:
+    get:
+      summary: Welcome endpoint
+      description: Returns a welcome message for the API
+      responses:
+        "200":
+          description: Welcome message
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Welcome to the video processing service API"
+
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Create a new user account with username and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  description: Unique username for the account
+                  example: "john_doe"
+                  minLength: 3
+                  maxLength: 30
+                password:
+                  type: string
+                  description: Password for the account
+                  example: "securePassword123"
+                  minLength: 6
+              required:
+                - username
+                - password
+      responses:
+        "201":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User registered successfully"
+                  user:
+                    $ref: '#/components/schemas/User'
+        "400":
+          description: Bad request - validation error or username already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login user
+      description: Authenticate user with username and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  description: Username for the account
+                  example: "john_doe"
+                password:
+                  type: string
+                  description: Password for the account
+                  example: "securePassword123"
+              required:
+                - username
+                - password
+      responses:
+        "200":
+          description: User logged in successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Login successful"
+                  token:
+                    type: string
+                    description: JWT authentication token
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  user:
+                    $ref: '#/components/schemas/User'
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/user/profile:
+    get:
+      tags:
+        - User Management
+      summary: Get current user profile
+      description: Retrieve the profile information of the currently authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        "401":
+          description: Unauthorized - invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    patch:
+      tags:
+        - User Management
+      summary: Update current user profile
+      description: Update the profile information of the currently authenticated user
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  description: New username (optional)
+                  example: "new_username"
+                profilePicture:
+                  type: string
+                  format: binary
+                  description: Profile picture file (optional)
+      responses:
+        "200":
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Profile updated successfully"
+                  user:
+                    $ref: '#/components/schemas/User'
+        "400":
+          description: Bad request - validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "401":
+          description: Unauthorized - invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/user/uploads:
+    get:
+      tags:
+        - User Management
+      summary: Get user uploads
+      description: Retrieve all videos uploaded by the currently authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User uploads retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uploads:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Video'
+                  total:
+                    type: number
+                    description: Total number of uploads
+        "401":
+          description: Unauthorized - invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/videos:
+    get:
+      tags:
+        - Video Management
+      summary: Get all videos
+      description: Retrieve a list of all available videos
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: Page number for pagination
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+          description: Number of videos per page
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Search videos by title
+      responses:
+        "200":
+          description: Videos retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  videos:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Video'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/videos/upload:
+    post:
+      tags:
+        - Video Management
+      summary: Upload and process video
+      description: Upload a new video file for processing and storage
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                video:
+                  type: string
+                  format: binary
+                  description: Video file to upload (MP4, AVI, MOV, etc.)
+                title:
+                  type: string
+                  description: Title of the video
+                  example: "My Amazing Video"
+                description:
+                  type: string
+                  description: Description of the video (optional)
+                  example: "This is a description of my video"
+                duration:
+                  type: number
+                  description: Duration of the video in seconds (optional)
+                  example: 120.5
+              required:
+                - video
+                - title
+      responses:
+        "201":
+          description: Video uploaded and processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Video uploaded successfully"
+                  video:
+                    $ref: '#/components/schemas/Video'
+        "400":
+          description: Bad request - invalid file or missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "401":
+          description: Unauthorized - invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "413":
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/videos/{id}:
+    get:
+      tags:
+        - Video Management
+      summary: Get video by ID
+      description: Retrieve detailed information about a specific video
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Unique identifier of the video
+          example: "507f1f77bcf86cd799439011"
+      responses:
+        "200":
+          description: Video retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Video'
+        "404":
+          description: Video not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    delete:
+      tags:
+        - Video Management
+      summary: Delete video by ID
+      description: Delete a specific video (only by the owner)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Unique identifier of the video to delete
+          example: "507f1f77bcf86cd799439011"
+      responses:
+        "200":
+          description: Video deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Video deleted successfully"
+        "401":
+          description: Unauthorized - invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "403":
+          description: Forbidden - user is not the owner of the video
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "404":
+          description: Video not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /dashboard:
+    get:
+      tags:
+        - Dashboard
+      summary: Test protected route
+      description: Simple endpoint to test JWT authentication
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Protected route accessed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Protected route accessed"
+        "401":
+          description: Unauthorized - invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from login endpoint
+
+  schemas:
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: Unique identifier
+          example: "507f1f77bcf86cd799439011"
+        username:
+          type: string
+          description: Username of the user
+          example: "john_doe"
+        profilePicture:
+          type: string
+          description: URL to profile picture
+          example: "https://res.cloudinary.com/example/image/upload/v123/profile.jpg"
+        createdAt:
+          type: string
+          format: date-time
+          description: User creation timestamp
+          example: "2024-01-01T00:00:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: "2024-01-01T00:00:00.000Z"
+      required:
+        - _id
+        - username
+        - createdAt
+        - updatedAt
+
+    Video:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: Unique identifier
+          example: "507f1f77bcf86cd799439011"
+        title:
+          type: string
+          description: Title of the video
+          example: "My Amazing Video"
+        description:
+          type: string
+          description: Description of the video
+          example: "This is a description of my video"
+        filename:
+          type: string
+          description: Original filename
+          example: "video.mp4"
+        cloudinaryUrl:
+          type: string
+          description: Cloudinary URL for the processed video
+          example: "https://res.cloudinary.com/example/video/upload/v123/video.mp4"
+        thumbnailUrl:
+          type: string
+          description: URL to video thumbnail
+          example: "https://res.cloudinary.com/example/image/upload/v123/thumbnail.jpg"
+        duration:
+          type: number
+          description: Duration in seconds
+          example: 120.5
+        size:
+          type: number
+          description: File size in bytes
+          example: 10485760
+        owner:
+          $ref: '#/components/schemas/User'
+        status:
+          type: string
+          enum: [processing, completed, failed]
+          description: Processing status of the video
+          example: "completed"
+        createdAt:
+          type: string
+          format: date-time
+          description: Video creation timestamp
+          example: "2024-01-01T00:00:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: "2024-01-01T00:00:00.000Z"
+      required:
+        - _id
+        - title
+        - filename
+        - owner
+        - status
+        - createdAt
+        - updatedAt
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          description: Current page number
+          example: 1
+        limit:
+          type: integer
+          description: Number of items per page
+          example: 10
+        total:
+          type: integer
+          description: Total number of items
+          example: 100
+        pages:
+          type: integer
+          description: Total number of pages
+          example: 10
+        hasNext:
+          type: boolean
+          description: Whether there is a next page
+          example: true
+        hasPrev:
+          type: boolean
+          description: Whether there is a previous page
+          example: false
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Error message
+          example: "An error occurred"
+        error:
+          type: string
+          description: Error type
+          example: "ValidationError"
+        details:
+          type: object
+          description: Additional error details
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+          example: "2024-01-01T00:00:00.000Z"
+
+tags:
+  - name: Authentication
+    description: User authentication endpoints
+  - name: User Management
+    description: User profile and management endpoints
+  - name: Video Management
+    description: Video upload, processing, and management endpoints
+  - name: Dashboard
+    description: Dashboard and testing endpoints

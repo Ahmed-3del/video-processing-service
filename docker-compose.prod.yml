@@ -1,0 +1,110 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    expose:
+      - "8080"
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - MONGO_URI=mongodb://mongo:27017/video-processing-service
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+      - CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME}
+      - CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY}
+      - CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET}
+      - MAX_FILE_SIZE=${MAX_FILE_SIZE:-100000000}
+      - UPLOAD_PATH=${UPLOAD_PATH:-uploads/}
+      - OUTPUT_PATH=${OUTPUT_PATH:-output_videos/}
+    volumes:
+      - ./uploads:/app/uploads
+      - ./output_videos:/app/output_videos
+    depends_on:
+      - mongo
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  mongo:
+    image: mongo:7.0
+    expose:
+      - "27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
+      - MONGO_INITDB_DATABASE=video-processing-service
+    volumes:
+      - mongo_data:/data/db
+      - ./mongo-init:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.prod.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+      - ./uploads:/var/www/uploads
+      - ./output_videos:/var/www/output_videos
+    depends_on:
+      - app
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  # Optional: Redis for caching and session storage
+  redis:
+    image: redis:7-alpine
+    expose:
+      - "6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  # Optional: Monitoring with Prometheus and Grafana
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+    volumes:
+      - grafana_data:/var/lib/grafana
+    restart: unless-stopped
+    networks:
+      - app-network
+
+volumes:
+  mongo_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  app-network:
+    driver: bridge

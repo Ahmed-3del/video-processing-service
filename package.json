@@ -1,0 +1,45 @@
+{
+  "name": "video-processing-service",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx watch src/server.ts",
+    "build": "tsc",
+    "serve": "node dist/server.js",
+    "lint": "eslint . --ext .ts",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@google-cloud/storage": "^7.16.0",
+    "bcrypt": "^6.0.0",
+    "cloudinary": "^2.7.0",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.5.0",
+    "express": "^5.1.0",
+    "firebase": "^11.9.1",
+    "firebase-admin": "^13.4.0",
+    "fluent-ffmpeg": "^2.1.3",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.16.0",
+    "multer": "^2.0.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@types/cookie-parser": "^1.4.9",
+    "@types/express": "^5.0.2",
+    "@types/fluent-ffmpeg": "^2.1.27",
+    "@types/multer": "^1.4.12",
+    "@types/node": "^22.15.33",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  }
+}
