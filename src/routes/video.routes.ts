@@ -11,6 +11,5 @@ router.post("/upload", upload.single("video"), (req, res, next) => {
 router.get("/", listVideos);
 router.get("/:id", (req, res, next) => {
   const videoId = req.params.id;
-  // Fetch video details by ID
 });
 export default router;
